@@ -29,9 +29,9 @@ void *find_section(elf32 *e, const char *section_name, ssize_t *size);
 
 /* to record symbol name */
 typedef struct sym_list {
-	uint32_t offset;
-	const char *name;
-	struct sym_list *next;
+    uint32_t offset;
+    const char *name;
+    struct sym_list *next;
 } SymList;
 
 

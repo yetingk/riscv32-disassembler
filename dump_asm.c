@@ -7,7 +7,7 @@ int decode_binary(void *code)
 {
     const char *op = NULL;
     int16_t imm = 0;
-    Instr *instr = (Instr *)code;
+    Instr *instr = (Instr *) code;
 
     // register arithmetic
     if (instr->opcode == OP_REG_ARITH) {
@@ -20,18 +20,18 @@ int decode_binary(void *code)
             }
             break;
         case 1:
-			op = "sll ";
-			break;
-		case 2:
-			op = "slt ";
-			break;
-		case 3:
-			op = "sltu";
-			break;
-		case 4:
-			op = "xor ";
-			break;
-		default:
+            op = "sll ";
+            break;
+        case 2:
+            op = "slt ";
+            break;
+        case 3:
+            op = "sltu";
+            break;
+        case 4:
+            op = "xor ";
+            break;
+        default:
             goto err;
         }
 
@@ -100,6 +100,6 @@ int decode_binary(void *code)
     }
 
 err:
-    printf("%8x\n", *(int *)code);
+    printf("%8x\n", *(int *) code);
     return -1;
 }
