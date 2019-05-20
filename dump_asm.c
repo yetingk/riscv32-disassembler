@@ -3,11 +3,11 @@
 #include "riscv32/instruction.h"
 #include "riscv32/register.h"
 
-int decode_binary(uint32_t code)
+int decode_binary(void *code)
 {
     const char *op = NULL;
     int16_t imm = 0;
-    Instr *instr = (Instr *) &code;
+    Instr *instr = (Instr *)code;
 
     // register arithmetic
     if (instr->opcode == OP_REG_ARITH) {
@@ -19,7 +19,19 @@ int decode_binary(uint32_t code)
                 op = "sub ";
             }
             break;
-        default:
+        case 1:
+			op = "sll ";
+			break;
+		case 2:
+			op = "slt ";
+			break;
+		case 3:
+			op = "sltu";
+			break;
+		case 4:
+			op = "xor ";
+			break;
+		default:
             goto err;
         }
 
@@ -88,6 +100,6 @@ int decode_binary(uint32_t code)
     }
 
 err:
-    printf("%8x\n", code);
+    printf("%8x\n", *(int *)code);
     return -1;
 }

@@ -71,7 +71,7 @@ void close_elf32(elf32 *e)
 }
 
 
-void *find_section(elf32 *e, const char *section_name, ssize_t *size)
+uint16_t section_idx(elf32 *e, const char *section_name)
 {
     void *f;
     Elf32_Ehdr *ehdr;
@@ -84,15 +84,79 @@ void *find_section(elf32 *e, const char *section_name, ssize_t *size)
     sh_num = e->shdr_num;
     sh_name = e->shdr_name;
 
-    for (int i = 0; i < sh_num; ++i) {
+    for (uint16_t i = 0; i < sh_num; ++i) {
         tmp = &sh_name[shdr[i].sh_name];
-        if (!strcmp(tmp, section_name)) {
-            if (size)
-                *size = shdr[i].sh_size;
-            return f + shdr[i].sh_offset;
-        }
+        if (!strcmp(tmp, section_name))
+            return i;
     }
 
     fatal("can't find section \"%s\"\n", section_name);
-    return NULL;
+    return -1;
+}
+
+
+void *find_section(elf32 *e, const char *section_name, ssize_t *size)
+{
+    uint16_t sh_idx = section_idx(e, section_name);
+    if (sh_idx < 0)
+        return NULL;
+
+    if (size)
+        *size = e->shdr[sh_idx].sh_size;
+    return e->file + e->shdr[sh_idx].sh_offset;
+}
+
+
+/* to record symbol */
+static SymList *sym_create(uint32_t offset, const char *sym_name)
+{
+	SymList *l = malloc(sizeof(SymList));
+	l->offset = offset;
+	l->name = sym_name;
+	l->next = NULL;
+	return l;
+}
+
+static void insert_symlist(SymList **head, uint32_t offset, const char *sym_name)
+{
+	SymList *new, **tmp;
+	
+	new = sym_create(offset, sym_name);
+	
+	tmp = head;
+	for (; *tmp && offset > (*tmp)->offset; tmp = &(*tmp)->next)
+		;
+	
+	new->next = *tmp;
+	*tmp = new;
+}
+
+SymList *func_list(elf32 *e)
+{
+	size_t size;
+	uint16_t sh_num, text_shndx;
+	const char *name;
+	Elf32_Sym *sym;
+	
+	text_shndx = section_idx(e, ".text"); 
+	name = find_section(e, ".strtab", NULL);
+	sym = find_section(e, ".symtab", &size);
+	sh_num = size / sizeof(Elf32_Sym);
+	
+	SymList *head = NULL;
+
+	for (int i = 0; i < sh_num; ++i) {
+		if (ELF32_ST_TYPE(sym[i].st_info) == STT_FUNC && sym[i].st_shndx == text_shndx)
+			insert_symlist(&head, sym[i].st_value, &name[sym[i].st_name]);
+	}
+	return head;
+}
+
+void free_symlist(SymList *l)
+{
+	while (l) {
+		SymList *tmp = l->next;
+		free(l);
+		l = tmp;
+	}
 }
