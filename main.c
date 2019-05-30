@@ -1,12 +1,14 @@
 #include "elf32.h"
+#include "riscv32/instruction.h"
 
-extern int decode_binary(void *);
+extern int dump_asm(int opcode, Instr *instr, uint32_t addr);
 
 int main(int argc, char **argv)
 {
     const char *file_name = NULL;
     size_t code_size;
-    void *code;
+    int opcode, *code;
+    Instr instr;
     SymList *tmp, *sym;
 
     if (argc < 2) {
@@ -27,12 +29,13 @@ int main(int argc, char **argv)
     code = find_section(e, ".text", &code_size);
 
     // dump asm
-    for (int i = 0; i < code_size; i += sizeof(uint32_t)) {
+    for (int i = 0; i < code_size / sizeof(int); i++) {
         if (tmp && i == tmp->offset) {
             printf("\n%s:\n", tmp->name);
             tmp = tmp->next;
         }
-        decode_binary(code + i);
+        opcode = decode_instr(code[i], &instr);
+        dump_asm(opcode, &instr, i << 2);
     }
 
     // free allocated resource
